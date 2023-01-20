@@ -6,22 +6,24 @@ public class Date {
     private int jour=-1;
     private int mois=-1;
     private An an;
+    //Constructeur par input utilisateur complet via les mutateurs
     public Date(){
-        this.jour=-1;
-        this.mois=-1;
-        this.an.setAn(-1);
+        this.setYears();
+        this.setDay();
     }
-    public Date(int jour, int year){
-        this.an = new An(year);
-        int[] input = numJourAnnee();
-        this.mois = input[1];
-        this.jour = input[0];
-        if(!verifier()){
-            System.out.println("Les valeurs entrées sont mauvaise.");
-        }else{
-            System.out.println("L'objet Date a été crée avec succés.");
+    //Constructeur avec attributs par input utilisateur en indiquant le numero du jours d'un année. Le systeme devra ensuite les convertirs en date réel.
+    public Date(int an, int jourtotaux){
+        this.an = new An(an);
+
+        if(jourtotaux > 367){
+            System.out.println("Veuillez entrez une quantité de jour inclus dans l'année correspondante.");
         }
 
+        this.numJourAnnee(jourtotaux);
+
+        if(!verifier()){
+            System.out.println("Les valeurs entrées sont mauvaise.");
+        }
     }
     public Date(int inputAn, int mois, int jour){
         this.an=new An(inputAn);
@@ -35,8 +37,8 @@ public class Date {
         return inp_year == this.an.getAn();
     }
     public void afficher(){
-        if(this.jourDeLAn().equals(this)){System.out.println("Bonne année ! ");}
-        System.out.format("%s %d %s %d", numJourSemaine(),numJourAnnee()[0], nomMois(), getYears());
+        //if(this.jourDeLAn().equals(this)){System.out.println("Bonne année ! ");}
+        System.out.format("%s %d %s %d", numJourSemaine(),this.jour, nomMois(), getYears());
         System.out.println();
     }
 
@@ -54,8 +56,9 @@ public class Date {
         }
         System.out.println("Insérez un jour : ");
         d = Integer.parseInt(input.nextLine());
-    }while(d >= an.nbJourMois(this.mois) || d < 0);
+    }while(d >= an.nbJourMois(this.mois, this.an) && d < 0);
     this.jour=d;
+
     }
     public void setMonth(){
         Scanner input = new Scanner(System.in);
@@ -67,19 +70,23 @@ public class Date {
         this.mois=m;
     }
     public void setYears(int an_Input){an.setAn(an_Input);}
-
-
-    public boolean verifier(){
-        return (this.mois > 0 && this.mois <= 12) && this.an.nbJourMois(this.mois) >= this.jour;
+    public void setYears(){
+        Scanner input = new Scanner(System.in);
+        System.out.println("Insérez une année : ");
+        this.an = new An(Integer.parseInt(input.nextLine()));
     }
 
-    public int[] numJourAnnee(){
+    public boolean verifier(){
+        return (this.mois > 0 && this.mois <= 12) && this.an.nbJourMois(this.mois, this.an) >= this.jour;
+    }
+
+    public void numJourAnnee(int jourtotaux){
         int mois = 0;
-        int lastDays = this.jour;
-        int[] stat = {31,(this.an.estBissextile() ? 29 : 28),31,30,31,30,31,31,30,31,30,31};
+        int lastDays = jourtotaux;
+        int[] stat = {31,(this.an.estBissextile(this.an) ? 29 : 28),31,30,31,30,31,31,30,31,30,31};
         for(int m = 1; m < stat.length;m++){
             if( stat[m] == -1){
-                stat[m] = this.an.estBissextile() ? 29 : 28;
+                stat[m] = this.an.estBissextile(this.an) ? 29 : 28;
             }
             mois=m+1;
             if(stat[m] >= lastDays){
@@ -87,8 +94,8 @@ public class Date {
             }
             lastDays = lastDays-stat[m];
         }
-        System.out.println("------------"+jour);
-        return new int[]{lastDays,mois};
+        this.jour=lastDays;
+        this.mois=mois;
     }
 
     public String numJourSemaine(){
@@ -129,15 +136,36 @@ public class Date {
 
 
     public int difference(Date d){
-        int diffY=0;
-        if(getYears() > d.getYears() || getYears() < d.getYears()){
-            diffY = abs(getYears()-d.getYears());
+        int cpyears = calculYearsDiff(this.an, d.an);
+        int cpmois=0; int cpJours=0;
+        for(int i=Math.min(d.getMonth(), this.getMonth());i <= Math.max(d.getMonth(), this.getMonth()); i++){
+            if(i == Math.max(d.getMonth(), this.getMonth())){
+                cpJours = Math.max(d.getDay(), this.getDay()) - Math.min(d.getDay(), this.getDay());
+            }else{
+                cpmois+=this.an.nbJourMois(i,this.an);
+            }
         }
-    return 1;
+        return cpmois+cpJours+cpyears;
+
+    }
+
+    public int calculYearsDiff(An a1, An a2){
+        int cp=0;
+        if(a1.getAn() != a2.getAn()){
+            for(int i = Math.min(a1.getAn(), a2.getAn());  i < Math.max(a1.getAn(), a2.getAn()); i++){
+                System.out.println(i);
+                cp+= a1.estBissextile(new An(i)) ? 366 : 355;
+            }
+        }
+        else{
+            return cp;
+        }
+        return cp;
     }
 
     public String nomMois(){
-        return new String[]{"Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "Aout", "Septembre", "Octobre", "Decembre"}[this.mois];
+        return new String[]{"Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "Aout", "Septembre", "Octobre","Novembre","Decembre"}[this.mois-1];
     }
+
 
 }
